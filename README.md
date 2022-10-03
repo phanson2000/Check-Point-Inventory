@@ -24,4 +24,5 @@ This is an early verison.  If you find a problem, please do not hesitate to reac
   Use golang terminal library for password collection instead of gopass
   Store configuration as well as password or api key in YAML file
   Generic report and summary creation as well as CSV file.
+  Better PARSING for easier report writing for LICENSE and VERSION information.
 
