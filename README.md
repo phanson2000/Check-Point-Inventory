@@ -1,4 +1,4 @@
-Easily inventory all firewalls connectioned to a Check Point Management Server. This tool utilizes Check Point WEBAPI and should work for R80.x and R81.X. This will go through all firewalls connected through all domains on the management.  This will export the details intoa summary file per gateway as well as CSV files for reporting.
+Easily inventory all firewalls connectioned to a Check Point Management Server. This tool utilizes Check Point WEBAPI and should work for R80.x and R81.X. This will go through all firewalls connected through all domains on the management.  This will export the details intoa summary file per gateway as well as CSV files for reporting.  This can be run on a Windows client, Linux such as Ubuntu/Redhat/Centos or Gaia management directly.
 
 You can download the source and compile with go.  If compiling to run on the mangement platform be sure CGO_ENABLED is set to 0.  i.e. export CGO_ENABLED=0
 
