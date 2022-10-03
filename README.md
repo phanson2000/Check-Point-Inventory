@@ -31,4 +31,8 @@ This is an early verison.  If you find a problem, please do not hesitate to reac
   6- Generic report and summary creation as well as CSV file.
   
   7- Better PARSING for easier report writing for LICENSE and VERSION information.
+  
+  8- SMB/Mastro/64000 data collection
+  
+  9- 
 
