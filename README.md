@@ -18,11 +18,17 @@ No Arguments Example:
 
 This is an early verison.  If you find a problem, please do not hesitate to reach out to me here, or at Check Point at phanson@checkpoint.com.  Some additional features requested and coming include:
 
-  Option to use APIKEY instead for password
-  argument for option detail firewall output
-  Remove timeout and use wait for completion to 100% and success TRUE when getting task output
-  Use golang terminal library for password collection instead of gopass
-  Store configuration as well as password or api key in YAML file
-  Generic report and summary creation as well as CSV file.
-  Better PARSING for easier report writing for LICENSE and VERSION information.
+  1 - Option to use APIKEY instead for password
+  
+  2 - argument for option detail firewall output
+  
+  3- Remove timeout and use wait for completion to 100% and success TRUE when getting task output
+  
+  4- Use golang terminal library for password collection instead of gopass
+  
+  5- Store configuration as well as password or api key in YAML file
+  
+  6- Generic report and summary creation as well as CSV file.
+  
+  7- Better PARSING for easier report writing for LICENSE and VERSION information.
 
