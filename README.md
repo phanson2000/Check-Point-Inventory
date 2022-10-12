@@ -2,7 +2,7 @@ Easily inventory all firewalls connectioned to a Check Point Management Server. 
 
 You can download the source and compile with go.  If compiling to run on the mangement platform be sure CGO_ENABLED is set to 0.  i.e. export CGO_ENABLED=0
 
-For compiling you will alsot need Check Point GO at https://github.com/CheckPointSW/cp-mgmt-api-go-sdk.  Biniaries are uploaded for both windows and linux including Gaia.
+For compiling you will also need Check Point GO at https://github.com/CheckPointSW/cp-mgmt-api-go-sdk.  Biniaries are uploaded for both windows and linux including Gaia.
 
 To run either execute CheckPointInventory and fill in the required fields or utilize the command line arguments.
 
