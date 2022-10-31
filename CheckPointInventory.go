@@ -888,9 +888,9 @@ func main() {
         }
         *password=string(silentpassword)
     }
-    
+    timeout2 := time.Duration(*timeout)
     fmt.Println("\n \n ######################################################################")
-    args := api.APIClientArgs(*defaultport, "", "", *apiServer, "", -1, "", false, false, "deb.txt", api.WebContext, api.TimeOut, api.SleepTime, "", "")
+    args := api.APIClientArgs(*defaultport, "", "", *apiServer, "", -1, "", false, false, "deb.txt", api.WebContext, timeout2, api.SleepTime, "", "")
     client := api.APIClient(args)
     if x, _ := client.CheckFingerprint(); !x {
         print("Could not get the server's fingerprint - Check connectivity with the server.\n")
@@ -931,19 +931,19 @@ func main() {
     fmt.Println("Management Domain's Found at ", *apiServer, ": " , domainipv4)
     for a := 0; a < len(domainipv4); a++ {
         fmt.Println("\n")
-        args2 := api.APIClientArgs(*defaultport, "", "",domainipv4[a], "", -1, "", false, false, "deb.txt", api.WebContext, api.TimeOut, api.SleepTime, "", "")
+        args2 := api.APIClientArgs(*defaultport, "", "",domainipv4[a], "", -1, "", false, false, "deb.txt", api.WebContext, timeout2, api.SleepTime, "", "")
         client2 := api.APIClient(args2)
             if x, _ := client.CheckFingerprint(); !x {
                 print("Could not get the server's fingerprint - Check connectivity with the server.\n")
                 os.Exit(1)
             }
-        loginRes2, err := client2.Login(*username, *password, false, domainipv4[a], false, "")
+        loginRes2, err := client2.Login(*username, *password, true, domainipv4[a], false, "")
             if err != nil {
                 fmt.Println("Login error.\n", err)
                 os.Exit(1)
             }
         if !loginRes2.Success {
-            fmt.Println("Login failed:\n" + loginRes.ErrorMsg)
+            fmt.Println("Login failed:\n" + loginRes2.ErrorMsg)
             os.Exit(1)
             continue
         }
