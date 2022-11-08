@@ -166,6 +166,12 @@ func getHostname (client *api.ApiClient, gatewayname string) (string) {
         taskMap := taskList[0].(map[string]interface{})
         taskhash := taskMap["task-id"]
         response:=getTask(client,taskhash.(string))
+        if response == "" { return "OFFLINE" }
+        if len(response) > 17 { strresp := response[0:17] 
+            if strresp == "Connection failed" {
+                return "OFFLINE"
+            }
+        }
         return response
     }
     return "OFFLINE"
@@ -496,6 +502,7 @@ func getDomains(client *api.ApiClient) ([]string) {
 
     for _,sessionObj := range showDomains.GetData(){
         domainname := (sessionObj.(map[string]interface{})["name"].(string))
+        //fmt.Println ("The domainname searching is :" ,domainname)
         payload := map[string]interface{}{
         "name":       domainname,
         }
@@ -506,10 +513,15 @@ func getDomains(client *api.ApiClient) ([]string) {
         }
         domain := showDomainip.GetData()
         serversList:= domain["servers"].([]interface{})
-        serversMap := serversList[0].(map[string]interface{})
-        ipv4 := serversMap["ipv4-address"]
-        ipv4address = append(ipv4address,ipv4.(string))
-
+        for i := 0; i < len(serversList); i++ {
+            serversMap := serversList[i].(map[string]interface{})
+            ipv4 := serversMap["ipv4-address"]
+            mgmttype := serversMap["type"]
+            active := serversMap["active"]
+            if active == true &&  mgmttype == "management server" {
+                ipv4address = append(ipv4address,ipv4.(string))
+            }
+        }
     }
     return ipv4address
 }
@@ -850,10 +862,7 @@ func processcollectioninfo(fwverfilename string,hostnamestr string,patches strin
 
 func main() {
     var uname2,api2 string
-    //var timeout *int
     var apiServer,username,password,scphost,scpusername,scppassword,scpdestpath,domaintarget *string
-    //var config,historicaldb bool
-    
     timeout=flag.Int("timeout",2,"Time delay before getting results from gateway")
     apiServer=flag.String("apiserver","0.0.0.0","Check Point Management IP")
     username=flag.String("username","unknown","Domain User on MDM")
@@ -867,8 +876,6 @@ func main() {
     domaintarget=flag.String("domaintarget","NIL", "File with Domains IPs to run.  Each IP should be seperated by a ,")
     defaultport=flag.Int("defaultport",443,"Default API port")
     flag.Parse()
-    //fmt.Println(*flag.Args())
-    
     if *apiServer == "0.0.0.0" { 
         fmt.Printf("Enter server IP address or hostname for Check Point Management/MDM: ")
         fmt.Scanf("%s \n",&api2)
@@ -935,16 +942,20 @@ func main() {
         client2 := api.APIClient(args2)
             if x, _ := client.CheckFingerprint(); !x {
                 print("Could not get the server's fingerprint - Check connectivity with the server.\n")
-                os.Exit(1)
+                //os.Exit(1)
             }
-        loginRes2, err := client2.Login(*username, *password, true, domainipv4[a], false, "")
+            payload := map[string]interface{}{
+            "user" : *username,
+            "password" : *password,
+            }
+        loginRes2, err := client2.ApiLogin(*username, *password, false, domainipv4[a], false, payload)
             if err != nil {
-                fmt.Println("Login error.\n", err)
-                os.Exit(1)
+                fmt.Println("Login error1.\n", err)
+                //os.Exit(1)
             }
         if !loginRes2.Success {
-            fmt.Println("Login failed:\n" + loginRes2.ErrorMsg)
-            os.Exit(1)
+            fmt.Println("Login failed2:\n" + loginRes2.ErrorMsg)
+            //os.Exit(1)
             continue
         }
         gwaddress:=getGatewayList(client2)
