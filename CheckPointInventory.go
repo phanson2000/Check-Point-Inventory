@@ -16,6 +16,9 @@ import(
 var (
     timeout,defaultport *int
     domainipv4 []string
+    gatewaychecked []string
+    debugoutput *bool
+    apiversion interface{}  
 )
 
 func extractValue(body string, key string) string {
@@ -119,18 +122,30 @@ func createloggingenvirorment() (string,string,string,string,string,string,strin
     
 }
 func getTask(client *api.ApiClient, hash string) string {
+    var taskMap map[string]interface{}
     payload := map[string]interface{}{
     "task-id" : hash,
     "details-level" : "full",
     }
-    taskresponse,err2 := client.ApiCall("show-task",payload, client.GetSessionID(),false, false)
-     if err2 != nil {
-        fmt.Println("Failed to retrieve the hosts\n")
-        return "failed"
-    }
-    response := taskresponse.GetData()
-    taskList:= response["tasks"].([]interface{})
-    taskMap := taskList[0].(map[string]interface{})
+    ok := true
+    for ok == true {
+        time.Sleep(time.Duration(*timeout) * time.Second)
+        if ok == true {fmt.Println ("           ...... waiting for task to finish")}
+        taskresponse,err2 := client.ApiCall("show-task",payload, client.GetSessionID(),false, false)
+         if err2 != nil {
+            fmt.Println("Failed to retrieve the hosts\n")
+            return "failed"
+        }
+        response := taskresponse.GetData()
+        taskList:= response["tasks"].([]interface{})
+        taskMap = taskList[0].(map[string]interface{})
+        //comment:=(taskMap["comments"])
+        taskResponse :=taskMap["comments"]
+        //fmt.Println("The taskResponse Value:", taskResponse)
+        //fmt.Println ("Checking Are we In Progress? " , taskResponse)
+        if taskResponse != "In Progress..." {ok = false}
+        }
+
     //comment:=(taskMap["comments"])
     //status:=(taskMap["status"])
     taskDetails := taskMap["task-details"].([]interface{})
@@ -142,25 +157,36 @@ func getTask(client *api.ApiClient, hash string) string {
         fmt.Printf("Error decoding string: %s ", err.Error())
         return "failed"
     }
+    if *debugoutput == true {
+        fmt.Println("Response", " ", string(responseDecode))    
+    }
     //fmt.Println(string(responseDecode))
     return string(responseDecode)
     
 }
 
 func getHostname (client *api.ApiClient, gatewayname string) (string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "Fetching Gatway Host Name",
     "script" : "/bin/clish -s -c 'show hostname'",
     "targets" : server,
+    }    
+    if *debugoutput == true {
+        fmt.Println("Request run-script", " ", payload, "Session ID", client.GetSessionID())    
     }
     showScriptTask,err2 := client.ApiCall("run-script",payload, client.GetSessionID(),false, false)
+    
      if err2 != nil {
         fmt.Println("Failed to retrieve the hosts\n")
         return "OFFLINE"
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
+         if *debugoutput == true {
+            fmt.Println("Task Response", showScriptTask)    
+        }
         if task["tasks"] !=nil {
         taskList:= task["tasks"].([]interface{})
         taskMap := taskList[0].(map[string]interface{})
@@ -178,7 +204,8 @@ func getHostname (client *api.ApiClient, gatewayname string) (string) {
 }
 
 func getAssetInfo (client *api.ApiClient, gatewayname string) (string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "Show Asset Info",
     "script" : "/bin/clish -s -c 'show asset all'",
@@ -189,7 +216,7 @@ func getAssetInfo (client *api.ApiClient, gatewayname string) (string) {
         fmt.Println("Failed to retrieve the hosts\n")
         return ""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
@@ -199,7 +226,8 @@ func getAssetInfo (client *api.ApiClient, gatewayname string) (string) {
 }
 
 func getLicenseInfo (client *api.ApiClient, gatewayname string) (string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "Show License Information",
     "script" : "cplic print",
@@ -210,7 +238,7 @@ func getLicenseInfo (client *api.ApiClient, gatewayname string) (string) {
         fmt.Println("Failed to retrieve the hosts\n")
         return ""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
@@ -220,7 +248,8 @@ func getLicenseInfo (client *api.ApiClient, gatewayname string) (string) {
 }
 
 func getifconfigInfo (client *api.ApiClient, gatewayname string) (string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "Show IFCONFIG",
     "script" : "ifconfig -a",
@@ -231,7 +260,7 @@ func getifconfigInfo (client *api.ApiClient, gatewayname string) (string) {
         fmt.Println("Failed to retrieve the hosts\n")
         return ""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
@@ -241,7 +270,8 @@ func getifconfigInfo (client *api.ApiClient, gatewayname string) (string) {
 }
 
 func getconfigInterfaceInfo (client *api.ApiClient, gatewayname string) (string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "show configuration interface",
     "script" : "/bin/clish -s -c 'show configuration interface'",
@@ -252,7 +282,7 @@ func getconfigInterfaceInfo (client *api.ApiClient, gatewayname string) (string)
         fmt.Println("Failed to retrieve the hosts\n")
         return ""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
@@ -262,7 +292,8 @@ func getconfigInterfaceInfo (client *api.ApiClient, gatewayname string) (string)
 }
 
 func getShowInterfaceAllInfo (client *api.ApiClient, gatewayname string) (string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "show interfaces all",
     "script" : "/bin/clish -s -c 'show interfaces all'",
@@ -273,7 +304,7 @@ func getShowInterfaceAllInfo (client *api.ApiClient, gatewayname string) (string
         fmt.Println("Failed to retrieve the hosts\n")
         return ""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
@@ -283,7 +314,8 @@ func getShowInterfaceAllInfo (client *api.ApiClient, gatewayname string) (string
 }
 
 func getFirewallVersion (client *api.ApiClient, gatewayname string) (string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "fw ver -k",
     "script" : "fw ver -k",
@@ -294,7 +326,7 @@ func getFirewallVersion (client *api.ApiClient, gatewayname string) (string) {
         fmt.Println("Failed to retrieve the hosts\n")
         return ""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
@@ -304,7 +336,8 @@ func getFirewallVersion (client *api.ApiClient, gatewayname string) (string) {
 }
 
 func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (string,string,string,string,string,string,string,string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload1 := map[string]interface{}{
     "script-name" : "cpinfo -y all",
     "script" : "cpinfo -y all",
@@ -315,14 +348,12 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
     taskhash := taskMap["task-id"]
     response1:=getTask(client,taskhash.(string))
-
-    
     payload2 := map[string]interface{}{
     "script-name" : "show routed version",
     "script" : "/bin/clish -s -c 'show routed version'",
@@ -334,7 +365,7 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task2 := showScriptTask.GetData()
     taskList2:= task2["tasks"].([]interface{})
     taskMap2 := taskList2[0].(map[string]interface{})
@@ -352,7 +383,7 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task3 := showScriptTask.GetData()
     taskList3:= task3["tasks"].([]interface{})
     taskMap3 := taskList3[0].(map[string]interface{})
@@ -370,7 +401,7 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task4 := showScriptTask.GetData()
     taskList4:= task4["tasks"].([]interface{})
     taskMap4 := taskList4[0].(map[string]interface{})
@@ -387,7 +418,7 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task5 := showScriptTask.GetData()
     taskList5:= task5["tasks"].([]interface{})
     taskMap5 := taskList5[0].(map[string]interface{})
@@ -405,7 +436,7 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task6 := showScriptTask.GetData()
     taskList6:= task6["tasks"].([]interface{})
     taskMap6 := taskList6[0].(map[string]interface{})
@@ -423,7 +454,7 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task7 := showScriptTask.GetData()
     taskList7:= task7["tasks"].([]interface{})
     taskMap7 := taskList7[0].(map[string]interface{})
@@ -442,7 +473,7 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
         fmt.Println("Failed to retrieve the hosts\n")
         return "","","","","","","",""
     }
-    time.Sleep(time.Duration(*timeout) * time.Second)
+    //time.Sleep(time.Duration(*timeout) * time.Second)
     task8 := showScriptTask.GetData()
     taskList8 := task8["tasks"].([]interface{})
     taskMap8 := taskList8[0].(map[string]interface{})
@@ -452,7 +483,8 @@ func GetFirewallConfiguration (client *api.ApiClient, gatewayname string) (strin
 }
 
 func GetPerformanceData(client *api.ApiClient, gatewayname string,scphost string,scpusername string,scppassword string,scpdestpath string) {
-    server := "\""+gatewayname+"\""
+    //server := "\""+gatewayname+"\""
+    server := gatewayname
     payload := map[string]interface{}{
     "script-name" : "Export CPVIEW History",
     "script" : "cpview -s export",
@@ -463,7 +495,7 @@ func GetPerformanceData(client *api.ApiClient, gatewayname string,scphost string
         fmt.Println("Failed to retrieve the hosts\n")
         //return ""
     }
-    time.Sleep(time.Duration(60) * time.Second)
+    //time.Sleep(time.Duration(60) * time.Second)
     task := showScriptTask.GetData()
     taskList:= task["tasks"].([]interface{})
     taskMap := taskList[0].(map[string]interface{})
@@ -869,6 +901,7 @@ func main() {
     password=flag.String("password","unknown","DOMAIN PASSWORD")
     config:=flag.Bool("config",false,"Pull Configuration for health checks")
     historicaldb:=flag.Bool("historicaldb",false,"SCP FIles")
+    debugoutput=flag.Bool("debugoutput",false, "Debug prints of API calls/resonses")
     scphost=flag.String("scphost","192.168.1.1","SCP To transfer Historical Performance and spike detective")
     //scpusername=flag.String("scpusername", "admin","SCP username for Spike Detector and Historical DB")
     //scppassword=flag.String("scppassword", "blank","SCP Password, if blank, assumed cert")
@@ -909,7 +942,9 @@ func main() {
         fmt.Println("Login error. \n", err)
         os.Exit(1)
     }
-
+    loginresponse := loginRes.GetData()
+    apiversion =loginresponse["api-server-version"]
+    fmt.Println("Management API Version:",apiversion)
     if !loginRes.Success {
         fmt.Println("Login failed:\n" + loginRes.ErrorMsg)
         os.Exit(1)
@@ -964,6 +999,7 @@ func main() {
                 fmt.Println("     Collecting from Firewall: ", gwaddress[i], "      From Domain: ", domainipv4[a])
                     hostname:=getHostname(client2,gwaddress[i])
                     if hostname != "OFFLINE" {
+                        gatewaychecked = append(gatewaychecked,gwaddress[i])
                         hostnamestr:=strings.Replace(hostname, "\n", "", -1)
                         assetinfo:=getAssetInfo(client2,gwaddress[i])
                         licenseinfo:=getLicenseInfo(client2,gwaddress[i])
@@ -989,6 +1025,5 @@ func main() {
                     if hostname == "OFFLINE" { fmt.Println("                 ",gwaddress[i], " is OFFLINE") }
                 }
             }
-        gwaddress:=getGatewayList(client)
-        fmt.Println("\n", "Full Gateways Inventoried: " , gwaddress)
+        fmt.Println("\n", "Full Gateways Inventoried: " , gatewaychecked)
 }
